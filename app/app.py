@@ -24,24 +24,33 @@ client = AzureOpenAIClient()
 
 with st.sidebar:
     user_input_text = st.text_area("prompt", value="")
-    uploaded_file = st.file_uploader("Upload Files", type=["pdf", "pptx", "png", "jpg", "jpeg", "webp"])
+    uploaded_files = st.file_uploader("Upload Files", type=["pdf", "pptx", "png", "jpg", "jpeg", "webp"], accept_multiple_files=True)
+
 
     model_temp = st.slider("Temperature", min_value=0.0, max_value=1.0, value=0.3, step=0.1)
     run_button = st.button("Run")
 
 if run_button:
-    if uploaded_file is None:
+    if uploaded_files is None:
         st.warning("File has not been uploaded")
         st.stop()
 
-    st.write(user_input_text)
+    if user_input_text:
+        st.write(user_input_text)
+
     with tempfile.TemporaryDirectory() as temp_dir:
 
-        path = save_uploaded_file(uploaded_file, temp_dir)
+        for idx, uploaded_file in enumerate(uploaded_files):
+            path = save_uploaded_file(uploaded_file, temp_dir)
+            base64_encoded = encode_file(path)
+            res = client.llm_response(user_input_text, base64_encoded, model_temp)
+            # res = client.dummy_response(user_input_text, base64_encoded)
 
-        base64_encoded = encode_file(path)
-        # res = client.llm_response(user_input_text, base64_encoded, model_temp)
-        res = client.dummy_response(user_input_text, base64_encoded)
-        st.markdown(f"```\n{res}\n```")
-        st.divider()
-        # st.write_stream(res)
+            img_col, json_data_col = st.columns(2)
+            with img_col:
+                st.image(path, caption=uploaded_file.name)
+
+            with json_data_col:
+                st.markdown(f"**{uploaded_file.name}**")
+                st.markdown(f"```\n{res}\n```")
+                st.divider()
