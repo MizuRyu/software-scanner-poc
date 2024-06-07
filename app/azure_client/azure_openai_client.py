@@ -17,7 +17,7 @@ class AzureOpenAIClient:
         self.system_prompt = SYSTEM_PROMPT
         self.max_tokens = 800
 
-    def dummy_response(self, user_input, base64_image):
+    def dummy_response(self, user_input, base64_encoded):
         return """
         {
     "date": "2022-01-01",
@@ -44,7 +44,8 @@ class AzureOpenAIClient:
             {"role": "user", "content": [
                 {"type": "text", "text": user_input},
                 {"type": "image_url", "image_url": {
-                    "url": f"data:image/png;base64, {base64_image}"
+                    "url": f"data:image/png;base64, {base64_image}",
+                    "detail": "high" # https://platform.openai.com/docs/guides/vision
                 }}
             ]}
         ],
