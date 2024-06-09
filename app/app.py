@@ -38,27 +38,23 @@ with st.sidebar:
     model_temp = st.slider("Temperature", min_value=0.0, max_value=1.0, value=0.3, step=0.1)
     run_button = st.button("Run")
 
+async def api_requests(uploaded_file, temp_dir, user_input_text, model_temp):
+    path = save_uploaded_file(uploaded_file, temp_dir)
+    base64_encoded = encode_file(path)
+    response = await async_client.async_dummy_response(user_input_text, base64_encoded)
+    return response, uploaded_file, path
+
 async def process_files(uploaded_files, user_input_text, model_temp):
     with tempfile.TemporaryDirectory() as temp_dir:
-        tasks = create_api_request_tasks(uploaded_files, temp_dir, user_input_text, model_temp)
-        results = await asyncio.gather(*[task[0] for task in tasks])
-        display_results(results, tasks)
-    
-def create_api_request_tasks(uploaded_files, temp_dir, user_input_text, model_temp):
-    tasks = []
-    for uploaded_file in uploaded_files:
-        path = save_uploaded_file(uploaded_file, temp_dir)
-        base64_encoded = encode_file(path)
-        # task = async_client.async_llm_response(user_input_text, base64_encoded, model_temp)
-        task = async_client.async_dummy_response(user_input_text, base64_encoded)
-        tasks.append((task, uploaded_file, path))
-    return tasks
+        tasks = [api_requests(file, temp_dir, user_input_text, model_temp) for file in uploaded_files]
+        results = await asyncio.gather(*tasks)
+        display_results(results)
 
-def display_results(results, tasks):
+def display_results(results):
     col_idx = 0
     cols = st.columns(4)
 
-    for res, (task, uploaded_file, path) in zip(results, tasks):
+    for res, uploaded_file, path in results:
         with cols[col_idx]:
             st.image(path, caption=uploaded_file.name)
         with cols[col_idx + 1]:
@@ -71,6 +67,12 @@ def display_results(results, tasks):
             col_idx = 0
             cols = st.columns(4)
 
+def run_asyncio_task(uploaded_files, user_input_text, model_temp):
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    loop.run_until_complete(process_files(uploaded_files, user_input_text, model_temp))
+    loop.close()
+
 if run_button:
     logger.info(f"uploaded_files: {uploaded_files}")
     if not uploaded_files:
@@ -81,4 +83,4 @@ if run_button:
         st.write(user_input_text)
     
     with st.spinner("実行中..."):
-        asyncio.run(process_files(uploaded_files, user_input_text, model_temp))
+        run_asyncio_task(uploaded_files, user_input_text, model_temp)
