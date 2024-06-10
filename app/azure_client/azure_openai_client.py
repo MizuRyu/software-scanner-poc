@@ -2,34 +2,55 @@ import os
 from openai import AzureOpenAI, AsyncAzureOpenAI
 from dotenv import load_dotenv
 
-from app.config.prompts import SYSTEM_PROMPT
+from app.config.prompts import SYSTEM_PROMPT_EN
+from logging import getLogger
 
 load_dotenv()
 
 class AzureOpenAIClient:
     def __init__(self):
+        self.logger = getLogger("software-scanner")
         self.client = AzureOpenAI(
             api_version=os.getenv("API_VERSION"),
             azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
             api_key=os.getenv("AZURE_OPENAI_API_KEY"),
         )
 
-        self.system_prompt = SYSTEM_PROMPT
+        self.system_prompt = SYSTEM_PROMPT_EN
         self.max_tokens = 800
 
     def dummy_response(self, user_input, base64_encoded):
         return """
+{
+    "DeliveryNotes": [
         {
-    "date": "2022-01-01",
-    "time": "12:00:00",
-    "products": [
+            "DeliveryId": "INV12345",
+            "Recipient": "Taro Yamada",
+            "DeliveryDate": "2022-01-01",
+            "Publisher": "ABC Corporation",
+            "Subtotal": "10000",
+            "Tax": "1000",
+            "Total": "11000"
+        }
+    ],
+    "ProductDetails": [
         {
-            "name": "product1",
-            "price": 100
+            "DeliveryId": "INV12345",
+            "ProductName": "Product A",
+            "Quantity": "2",
+            "Unit": "pcs",
+            "UnitPrice": "5000",
+            "TotalPrice": "10000",
+            "Origin": "Japan"
         },
         {
-            "name": "product2",
-            "price": 200
+            "DeliveryId": "INV12345",
+            "ProductName": "Product B",
+            "Quantity": "3",
+            "Unit": "pcs",
+            "UnitPrice": "1000",
+            "TotalPrice": "3000",
+            "Origin": "Japan"
         }
     ]
 }
@@ -52,6 +73,7 @@ class AzureOpenAIClient:
         max_tokens=self.max_tokens,
         temperature=model_temp,
     )
+        self.logger.info(f"response: {response.choices[0].message.content}")
         return response.choices[0].message.content
 
     def stream_llm_response(self, user_input, base64_image, model_temp=0.3):
@@ -81,28 +103,48 @@ class AzureOpenAIClient:
 
 class AsyncAzureOpenAIClient:
     def __init__(self):
+        self.logger = getLogger("software-scanner")
         self.client = AsyncAzureOpenAI(
             api_version=os.getenv("API_VERSION"),
             azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
             api_key=os.getenv("AZURE_OPENAI_API_KEY"),
         )
 
-        self.system_prompt = SYSTEM_PROMPT
-        self.max_tokens = 800
+        self.system_prompt = SYSTEM_PROMPT_EN
+        self.max_tokens = 2048
 
     async def async_dummy_response(self, user_input, base64_encoded):
         return """
+{
+    "DeliveryNotes": [
         {
-    "date": "2022-01-01",
-    "time": "12:00:00",
-    "products": [
+            "DeliveryId": "INV12345",
+            "Recipient": "Taro Yamada",
+            "DeliveryDate": "2022-01-01",
+            "Publisher": "ABC Corporation",
+            "Subtotal": "10000",
+            "Tax": "1000",
+            "Total": "11000"
+        }
+    ],
+    "ProductDetails": [
         {
-            "name": "product1",
-            "price": 100
+            "DeliveryId": "INV12345",
+            "ProductName": "Product A",
+            "Quantity": "2",
+            "Unit": "pcs",
+            "UnitPrice": "5000",
+            "TotalPrice": "10000",
+            "Origin": "Japan"
         },
         {
-            "name": "product2",
-            "price": 200
+            "DeliveryId": "INV12345",
+            "ProductName": "Product B",
+            "Quantity": "3",
+            "Unit": "pcs",
+            "UnitPrice": "1000",
+            "TotalPrice": "3000",
+            "Origin": "Japan"
         }
     ]
 }
@@ -125,6 +167,7 @@ class AsyncAzureOpenAIClient:
         max_tokens=self.max_tokens,
         temperature=model_temp,
     )
+        self.logger.info(f"response: {response.choices[0].message.content}")
         return response.choices[0].message.content
 
     async def async_stream_llm_response(self, user_input, base64_image, model_temp=0.3):

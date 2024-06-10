@@ -1,3 +1,4 @@
+import json
 import sys
 import os
 import asyncio
@@ -12,9 +13,10 @@ project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.insert(0, project_root)
 
 from app.azure_client.azure_openai_client import AzureOpenAIClient, AsyncAzureOpenAIClient
+from app.excelsheet.excelmanager import ExcelHandler
 from app.utils.encodefile import encode_file
 from app.utils.fileutils import save_uploaded_file
-from app.config.prompts import SYSTEM_PROMPT
+from app.config.prompts import SYSTEM_PROMPT_JA
 
 logger = getLogger("software-scanner")
 
@@ -32,7 +34,8 @@ async_client = AsyncAzureOpenAIClient()
 # sidebar
 with st.sidebar:
     with st.expander("Show System Prompt"):
-        st.write(SYSTEM_PROMPT)
+        st.markdown(f"```\n{SYSTEM_PROMPT_JA}\n```")
+
     user_input_text = st.text_area("prompt", value="")
     uploaded_files = st.file_uploader("Upload Files", type=["pdf", "pptx", "png", "jpg", "jpeg", "webp"], accept_multiple_files=True)
     model_temp = st.slider("Temperature", min_value=0.0, max_value=1.0, value=0.3, step=0.1)
@@ -41,7 +44,18 @@ with st.sidebar:
 async def api_requests(uploaded_file, temp_dir, user_input_text, model_temp):
     path = save_uploaded_file(uploaded_file, temp_dir)
     base64_encoded = encode_file(path)
+    # response = await async_client.async_llm_response(user_input_text, base64_encoded, model_temp)
     response = await async_client.async_dummy_response(user_input_text, base64_encoded)
+
+    json_data = json.loads(response)
+    delivery_notes_data = json_data.get("DeliveryNotes", [])
+    product_details_list = json_data.get("ProductDetails", [])
+    logger.info(f"json_data: {json_data}")
+
+    # connect to excel
+    excel_handler = ExcelHandler()
+    excel_handler.writer_delivery_notes_data(delivery_notes_data)
+    excel_handler.writer_product_data(product_details_list)
     return response, uploaded_file, path
 
 async def process_files(uploaded_files, user_input_text, model_temp):
@@ -74,6 +88,7 @@ def run_asyncio_task(uploaded_files, user_input_text, model_temp):
     loop.close()
 
 if run_button:
+    logger.info("=============================")
     logger.info(f"uploaded_files: {uploaded_files}")
     if not uploaded_files:
         st.warning("File has not been uploaded")
