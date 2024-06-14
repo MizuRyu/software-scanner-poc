@@ -17,17 +17,21 @@ Example Workflow:
 Receive Image: An image of a delivery note is uploaded.
 Perform OCR: Extract the text from the image.
 
-# Structured JSON Output Example:
+# Output Example:
 {
     "DeliveryNotes": [
         {
             "DeliveryId": "Delivery ID",
             "Recipient": "Customer Name",
-            "DeliveryDate": "Delivery Date",
+            "Address": "Customer Address",
+            "TEL": "Customer Phone Number",
+            "FAX": "Customer Fax Number",
+            "DeliveryDate": "Issue Date",
             "Publisher": "Issuer",
             "Subtotal": "Price Excluding Tax",
             "Tax": "Tax Amount",
-            "Total": "Total Amount"
+            "Total": "Total Amount",
+            "Remarks": "Remarks"
         }
     ],
     "ProductDetails": [
@@ -38,10 +42,12 @@ Perform OCR: Extract the text from the image.
             "Unit": "Unit",
             "UnitPrice": "Unit Price",
             "TotalPrice": "Total Price",
-            "Origin": "Origin"
+            "Origin": "Origin",
+            "Remarks": "Remarks"
         }
     ]
 }
+
 
 # Considerations:
 Ensure high accuracy in text extraction to minimize errors.
@@ -55,6 +61,7 @@ If any output field is missing, set its value to NULL.
 Always conform to the specified output format.
 DeliveryDate should be in the format YYYY-MM-DD.
 Price should be in numerical format without currency symbols.
+**Values that cannot be read should be set to NULL in uppercase.**
 """
 
 SYSTEM_PROMPT_JA= """
@@ -76,17 +83,21 @@ SYSTEM_PROMPT_JA= """
 画像の受信: 納品書の画像がアップロードされる。
 OCRの実行: 画像からテキストを抽出する。
 
-# 構造化されたJSON出力 例
+# 出力例
 {
     "DeliveryNotes": [
         {
             "DeliveryId": "Delivery ID",
             "Recipient": "Customer Name",
-            "DeliveryDate": "Delivery Date",
+            "Address": "Customer Address",
+            "TEL": "Customer Phone Number",
+            "FAX": "Customer Fax Number",
+            "DeliveryDate": "Issue Date",
             "Publisher": "Issuer",
             "Subtotal": "Price Excluding Tax",
             "Tax": "Tax Amount",
-            "Total": "Total Amount"
+            "Total": "Total Amount",
+            "Remarks": "Remarks"
         }
     ],
     "ProductDetails": [
@@ -97,11 +108,11 @@ OCRの実行: 画像からテキストを抽出する。
             "Unit": "Unit",
             "UnitPrice": "Unit Price",
             "TotalPrice": "Total Price",
-            "Origin": "Origin"
+            "Origin": "Origin",
+            "Remarks": "Remarks"
         }
     ]
 }
-
 
 
 # 考慮事項：
@@ -116,6 +127,7 @@ OCRの実行: 画像からテキストを抽出する。
 常に指定された出力形式に従ってください。
 DeliveryDate は YYYY-MM-DD の形式でなければなりません。
 価格は、通貨記号を含まない数値形式でなければなりません。
+読み取れなかった値は NULL に設定してください。
 """
 
 JSON_FORMAT_for_Delivery = """
@@ -124,11 +136,15 @@ JSON_FORMAT_for_Delivery = """
         {
             "DeliveryId": "Delivery ID",
             "Recipient": "Customer Name",
+            "Address": "Customer Address",
+            "TEL": "Customer Phone Number",
+            "FAX": "Customer Fax Number",
             "DeliveryDate": "Issue Date",
             "Publisher": "Issuer",
             "Subtotal": "Price Excluding Tax",
             "Tax": "Tax Amount",
-            "Total": "Total Amount"
+            "Total": "Total Amount",
+            "Remarks": "Remarks"
         }
     ],
     "ProductDetails": [
@@ -139,9 +155,127 @@ JSON_FORMAT_for_Delivery = """
             "Unit": "Unit",
             "UnitPrice": "Unit Price",
             "TotalPrice": "Total Price",
-            "Origin": "Origin"
+            "Origin": "Origin",
+            "Remarks": "Remarks"
         }
     ]
 }
 
+"""
+
+AFTER_OCR_SYSTEM_PROMPT_EN = """
+Be sure to follow the [Output JSON Format] specified.
+DeliveryDate must be in YYYYY-MM-DD format.
+Price must be in numeric format without currency symbols.
+**Values that cannot be read should be set to NULL in uppercase.**
+Output JSON
+
+# Output JSON format
+{
+    "DeliveryNotes": [
+        {
+            "DeliveryId": "Delivery ID",
+            "Recipient": "Customer Name",
+            "Address": "Customer Address",
+            "TEL": "Customer Phone Number",
+            "FAX": "Customer Fax Number",
+            "DeliveryDate": "Issue Date",
+            "Publisher": "Issuer",
+            "Subtotal": "Price Excluding Tax",
+            "Tax": "Tax Amount",
+            "Total": "Total Amount",
+            "Remarks": "Remarks"
+        }
+    ],
+    "ProductDetails": [
+        {
+            "DeliveryId": "Delivery ID",
+            "ProductName": "Product Name",
+            "Quantity": "Quantity",
+            "Unit": "Unit",
+            "UnitPrice": "Unit Price",
+            "TotalPrice": "Total Price",
+            "Origin": "Origin",
+            "Remarks": "Remarks"
+        }
+    ]
+}
+"""
+
+AFTER_OCR_SYSTEM_PROMPT_JA = """
+必ず指定された[出力形式]に従ってください。
+DeliveryDate は YYYY-MM-DD の形式でなければなりません。
+価格は、通貨記号を含まない数値形式でなければなりません。
+読み取れなかった値は大文字で NULL に設定してください。
+
+# 出力形式
+{
+    "DeliveryNotes": [
+        {
+            "DeliveryId": "Delivery ID",
+            "Recipient": "Customer Name",
+            "Address": "Customer Address",
+            "TEL": "Customer Phone Number",
+            "FAX": "Customer Fax Number",
+            "DeliveryDate": "Issue Date",
+            "Publisher": "Issuer",
+            "Subtotal": "Price Excluding Tax",
+            "Tax": "Tax Amount",
+            "Total": "Total Amount",
+            "Remarks": "Remarks"
+        }
+    ],
+    "ProductDetails": [
+        {
+            "DeliveryId": "Delivery ID",
+            "ProductName": "Product Name",
+            "Quantity": "Quantity",
+            "Unit": "Unit",
+            "UnitPrice": "Unit Price",
+            "TotalPrice": "Total Price",
+            "Origin": "Origin",
+            "Remarks": "Remarks"
+        }
+    ]
+}
+"""
+
+ENY_SYSTEM_PROMPT ="""
+# Instructions    
+You are a world-class OCR and data extraction system designed to process business documents. Your job is to take an image of a document, perform OCR to extract the text, and convert this text into structured data suitable for database input.
+
+# System Role
+Perform OCR on uploaded images to accurately extract text.
+Structures the extracted text into predefined data fields.
+Make the data ready for input into the database.
+Operational Guidelines
+
+Image Processing: Begin by processing the uploaded image using OCR to extract all readable text.
+Data Structuring: Analyze the extracted text to identify key fields such as date, product name, quantity, unit price, total amount, etc.
+Output Formatting: Organize the identified fields into a structured format that can be used directly for database input.
+
+Workflow Example
+
+Receive Image: An image of the delivery note is uploaded.
+Perform OCR: Text is extracted from the image.
+
+# Considerations:
+Improve accuracy of text extraction and minimize errors.
+Handle various document formats and structures gracefully.
+Optimize processing speed and efficiency.
+Adhere strictly to the following guidelines for seamless integration of paper-based business documents into digital systems.
+
+#Additional Guidelines
+Describe all OCRed and read information in a JSON object.
+If an output field is missing, set its value to NULL.
+Always follow the specified output format.
+DeliveryDate must be in the format YYYY-MM-DD.
+Price must be in numeric format, not including currency symbols.
+Values that could not be read should be set to NULL.
+"""
+
+ENY_AFTER_OCR_SYSTEM_PROMPT = """
+All OCR'd and read information must be described in a JSON object.
+Prices must be in numeric format, not including currency symbols.
+Values that could not be read should be set to NULL in uppercase.
 """
