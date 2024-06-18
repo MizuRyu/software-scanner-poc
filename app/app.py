@@ -13,8 +13,8 @@ sys.path.insert(0, project_root)
 from app.azure_client.azure_openai_client import AzureOpenAIClient, AsyncAzureOpenAIClient
 from app.services import api_requests
 from app.utils import encode_file, save_uploaded_file
-from app.config.prompts import SYSTEM_PROMPT_JA
-from app.config.config import DOCUMENT_TYPE_MAPPING, DOCUMENT_TYPE_MAPPING_PROMPT
+from app.config.prompts_ja import SYSTEM_PROMPT_JA
+from app.config.config import DOCUMENT_TYPE_MAPPING
 
 logger = getLogger("software-scanner")
 
@@ -62,8 +62,8 @@ async def display_json_result(result):
         st.markdown(f"**{uploaded_file_name}**")
         st.json(res)
 
-async def run_generate_json(system_prompt, document_type, encoded_file, file_path, uploaded_file_name, config):
-    res = await api_requests(system_prompt, document_type, encoded_file, file_path, uploaded_file_name, config)
+async def run_generate_json(document_type, encoded_file, file_path, uploaded_file_name, config):
+    res = await api_requests(document_type, encoded_file, file_path, uploaded_file_name, config)
     await display_json_result(res)
 
 async def run_analyze_document_type_process(base64_image, config):
@@ -88,8 +88,7 @@ async def main_process(uploaded_files, config):
 
             analyzed_document_type = await run_analyze_document_type_process(encoded_file, config)
             st.write(f"ファイル名: {uploaded_file.name} | 文書Format: {DOCUMENT_TYPE_MAPPING[analyzed_document_type]}")
-            system_prompt = DOCUMENT_TYPE_MAPPING_PROMPT[analyzed_document_type]
-            tasks.append(run_generate_json(system_prompt, analyzed_document_type, encoded_file, path, uploaded_file.name, config))
+            tasks.append(run_generate_json(analyzed_document_type, encoded_file, path, uploaded_file.name, config))
         
         await asyncio.gather(*tasks)
     finally:

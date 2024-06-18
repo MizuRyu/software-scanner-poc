@@ -10,13 +10,14 @@ logger = getLogger("software-scanner")
 
 async_client = AsyncAzureOpenAIClient()
 
-async def api_requests(system_prompt, document_type, base64_encoded, path, uploaded_file_name, config):
+async def api_requests(document_type, base64_encoded, path, uploaded_file_name, config):
+
 
     if config["ocr_enhance"]: # gpt4o + ocr enhanced
-        response = await async_client.async_enhanced_ocr_llm_response(path, base64_encoded, config["model_temp"]) 
+        response = await async_client.async_enhanced_ocr_llm_response(document_type, path, base64_encoded, config["model_temp"]) 
     else:
-        response = await async_client.async_llm_response(system_prompt, base64_encoded, config["model_temp"]) # gpt4o
-        # response = await async_client.async_dummy_response(system_prompt, base64_encoded) # dummy
+        response = await async_client.async_llm_response(document_type, base64_encoded, config["model_temp"]) # gpt4o
+        # response = await async_client.async_dummy_response() # dummy
     
     json_data = json.loads(response)
     logger.info(f"document type: {document_type}")

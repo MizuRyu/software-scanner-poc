@@ -1,4 +1,4 @@
-from app.config.prompts import BILL_SYSTEM_PROMPT_EN, SYSTEM_PROMPT_EN, QUOTATION_SYSTEM_PROMPT_EN
+from app.config.prompts_json_schema import DELIVERY_JSON_FORMAT, BILL_JSON_FORMAT, QUOTATION_JSON_FORMAT
 
 DOCUMENT_TYPE_MAPPING = {
     'bill': '請求書',
@@ -6,8 +6,8 @@ DOCUMENT_TYPE_MAPPING = {
     'quotation': '見積書'
 }
 
-DOCUMENT_TYPE_MAPPING_PROMPT = {
-    'bill': BILL_SYSTEM_PROMPT_EN,
-    'deliveryNote': SYSTEM_PROMPT_EN,
-    'quotation': QUOTATION_SYSTEM_PROMPT_EN
+DOCUMENT_TYPE_MAPPING_JSON = {
+    'deliveryNote': DELIVERY_JSON_FORMAT,
+    'bill': BILL_JSON_FORMAT,
+    'quotation': QUOTATION_JSON_FORMAT
 }
