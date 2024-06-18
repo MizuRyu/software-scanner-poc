@@ -1,5 +1,6 @@
 streamlit
 openai
+openpyxl
 pandas
 python-dotenv
 azure-ai-documentintelligence
