@@ -1,22 +1,20 @@
-import json
 import sys
 import os
 import asyncio
-import tempfile
 import streamlit as st
+import tempfile
 
 from logging import getLogger
-
 
 # パスが通らないので明示的にsys.pathに追加
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.insert(0, project_root)
 
 from app.azure_client.azure_openai_client import AzureOpenAIClient, AsyncAzureOpenAIClient
-from app.excelsheet.excelmanager import ExcelHandler
-from app.utils.encodefile import encode_file
-from app.utils.fileutils import save_uploaded_file
+from app.services import api_requests
+from app.utils import encode_file, save_uploaded_file
 from app.config.prompts import SYSTEM_PROMPT_JA
+from app.config.config import DOCUMENT_TYPE_MAPPING, DOCUMENT_TYPE_MAPPING_PROMPT
 
 logger = getLogger("software-scanner")
 
@@ -30,7 +28,6 @@ st.set_page_config(
 client = AzureOpenAIClient()
 async_client = AsyncAzureOpenAIClient()
 
-user_input_text = ""
 
 # sidebar
 with st.sidebar:
@@ -38,10 +35,10 @@ with st.sidebar:
         st.markdown(f"```\n{SYSTEM_PROMPT_JA}\n```")
 
     # user_input_text = st.text_area("prompt", value="")
-    uploaded_files = st.file_uploader("ファイルをアップロード", type=["pdf", "png", "jpg", "jpeg"], accept_multiple_files=True)
+    uploaded_files = st.file_uploader("ファイルをアップロード", type=["png", "jpg"], accept_multiple_files=True)
     model_temp = st.slider("Temperature", min_value=0.0, max_value=1.0, value=0.3, step=0.1)
     ocr_enhance = st.checkbox("OCR Enhance", value=False)
-    excel_output = st.checkbox("Excel出力(納品書のみ対応)", value=False)
+    excel_output = st.checkbox("Excel Output", value=False)
     run_button = st.button("実行")
 
     config = {
@@ -51,56 +48,58 @@ with st.sidebar:
     }
     logger.info(f"config: {config}")
 
-async def api_requests(uploaded_file, temp_dir, user_input_text, config):
-    path = save_uploaded_file(uploaded_file, temp_dir)
-    base64_encoded = encode_file(path)
+async def display_json_result(result):
+    try:
+        res, uploaded_file_name, path = result
+    except ValueError as e:
+        st.error(f"Error: {e}")
+        return
 
-    if config["ocr_enhance"]: # gpt4o + ocr enhanced
+    cols = st.columns(2)
+    with cols[0]:
+        st.image(path, caption=uploaded_file_name)
+    with cols[1]:
+        st.markdown(f"**{uploaded_file_name}**")
+        st.json(res)
+
+async def run_generate_json(system_prompt, document_type, encoded_file, file_path, uploaded_file_name, config):
+    res = await api_requests(system_prompt, document_type, encoded_file, file_path, uploaded_file_name, config)
+    await display_json_result(res)
+
+async def run_analyze_document_type_process(base64_image, config):
+    document_type = await async_client.async_analyze_document_type_llm_response(base64_image, config["model_temp"])
+    # await asyncio.sleep(2)
+    return document_type
+
+async def main_process(uploaded_files, config):
+    encoded_files = []
+    file_paths = []
+    uploaded_file_names = []
+    temp_dir = tempfile.mkdtemp()
+
+    try:
+        tasks = []
+        for uploaded_file in uploaded_files:
+            path = save_uploaded_file(uploaded_file, temp_dir)
+            encoded_file = encode_file(path)
+            encoded_files.append(encoded_file)
+            file_paths.append(path)
+            uploaded_file_names.append(uploaded_file.name)
+
+            analyzed_document_type = await run_analyze_document_type_process(encoded_file, config)
+            st.write(f"ファイル名: {uploaded_file.name} | 文書Format: {DOCUMENT_TYPE_MAPPING[analyzed_document_type]}")
+            system_prompt = DOCUMENT_TYPE_MAPPING_PROMPT[analyzed_document_type]
+            tasks.append(run_generate_json(system_prompt, analyzed_document_type, encoded_file, path, uploaded_file.name, config))
         
-        response = await async_client.async_enhanced_ocr_llm_response(path, base64_encoded, config["model_temp"]) 
-    else:
-        response = await async_client.async_llm_response(user_input_text, base64_encoded, config["model_temp"]) # gpt4o
-        # response = await async_client.async_dummy_response(user_input_text, base64_encoded) # dummy
-    
-    logger.info(f"API response: {response}")
-    json_data = json.loads(response)
-    delivery_notes_data = json_data.get("DeliveryNotes", [])
-    product_details_list = json_data.get("ProductDetails", [])
-    logger.info(f"json_data: {json_data}")
-
-    if config["excel_output"]:
-        excel_handler = ExcelHandler()
-        excel_handler.writer_delivery_notes_data(delivery_notes_data)
-        excel_handler.writer_product_data(product_details_list)
-
-    return response, uploaded_file, path
-
-async def process_files(uploaded_files, user_input_text, config):
-    with tempfile.TemporaryDirectory() as temp_dir:
-        tasks = [api_requests(file, temp_dir, user_input_text, config) for file in uploaded_files]
-        results = await asyncio.gather(*tasks)
-        display_results(results)
-
-def display_results(results):
-    col_idx = 0
-    cols = st.columns(4)
-
-    for res, uploaded_file, path in results:
-        with cols[col_idx]:
-            st.image(path, caption=uploaded_file.name)
-        with cols[col_idx + 1]:
-            st.markdown(f"**{uploaded_file.name}**")
-            st.markdown(f"```\n{res}\n```")
-            st.divider()
-        
-        col_idx += 2
-        if col_idx >= 4:
-            col_idx = 0
-            cols = st.columns(4)
-
-def run_asyncio_task(uploaded_files, user_input_text, config):
-    asyncio.run(process_files(uploaded_files, user_input_text, config))
-
+        await asyncio.gather(*tasks)
+    finally:
+        try: 
+            for path in file_paths:
+                os.remove(path)
+            os.rmdir(temp_dir)
+            logger.info("=============================")
+        except FileNotFoundError as e:
+            logger.error(f"Error deleting file: {e}")
 
 
 # View
@@ -112,6 +111,7 @@ if run_button:
         st.stop()
 
     with st.spinner("実行中..."):
-        run_asyncio_task(uploaded_files, user_input_text, config)
-
-        
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        loop.run_until_complete(main_process(uploaded_files, config))
+        loop.close()
