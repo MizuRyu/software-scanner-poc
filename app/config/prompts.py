@@ -14,7 +14,7 @@ Output Formatting: Organize the identified fields into a structured format that 
 Error Handling: Implement robust error detection and handling to manage unreadable text or incomplete data.
 Example Workflow:
 
-Receive Image: An image of a delivery note is uploaded.
+Receive Image: An image of a document is uploaded.
 Perform OCR: Extract the text from the image.
 
 # Considerations:
@@ -49,12 +49,17 @@ Output JSON
 """
 
 ANALYZE_DOCUMENT_SYSTEM_PROMPT_EN = """
-Determine what type of document the given image is and output only the type.
-The image can be one of three types of documents: bill, deliveryNote, or quotation.
-「bill」「deliveryNote」「quotation」
-Output only the document name in English.
+Determine which type of document the given image is and output only that type.
+The image can be one of three document types: invoice, delivery note, or estimate.
+If any other type of image is entered, output "other".
+「bill」「deliveryNote」「quotation」「other」
+Please output only the document name in English
 
-# Example
-user: Input Images(Delivery Note)
+# Example 1
+User Input image (Delivery note)
 Assistant: deliveryNote
+
+# Example 2
+User: Input image (receipt)
+Assistant: other
 """
