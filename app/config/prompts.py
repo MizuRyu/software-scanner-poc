@@ -49,11 +49,13 @@ Output JSON
 """
 
 ANALYZE_DOCUMENT_SYSTEM_PROMPT_EN = """
-Determine which type of document the given image is and output only that type.
-The image can be one of three document types: invoice, delivery note, or estimate.
-If any other type of image is entered, output "other".
-「bill」「deliveryNote」「quotation」「other」
-Please output only the document name in English
+You are an expert in document classification.
+Determine which type of document the given image is and output only the specified type.
+This can be one of the four document types: bill, delivery note, estimate, or other.
+If any other image is entered, output "other."
+Be sure to output「bill」「deliveryNote」「quotation」「other」 as one of the four names.
+
+Only the document name should be output in English.
 
 # Example 1
 User Input image (Delivery note)
