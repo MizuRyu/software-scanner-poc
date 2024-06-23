@@ -39,12 +39,14 @@ with st.sidebar:
     model_temp = st.slider("Temperature", min_value=0.0, max_value=1.0, value=0.3, step=0.1)
     ocr_enhance = st.checkbox("OCR Enhance", value=False)
     excel_output = st.checkbox("Excel Output", value=False)
+    write_db = st.checkbox("Write Data", value=False)
     run_button = st.button("実行")
 
     config = {
         "model_temp": model_temp,
         "ocr_enhance": ocr_enhance,
-        "excel_output": excel_output
+        "excel_output": excel_output,
+        "write_db": write_db,
     }
     logger.info(f"config: {config}")
 
@@ -68,7 +70,6 @@ async def run_generate_json(document_type, encoded_file, file_path, uploaded_fil
 
 async def run_analyze_document_type_process(base64_image, config):
     document_type = await async_client.async_analyze_document_type_llm_response(base64_image, config["model_temp"])
-    # await asyncio.sleep(2)
     return document_type
 
 async def main_process(uploaded_files, config):

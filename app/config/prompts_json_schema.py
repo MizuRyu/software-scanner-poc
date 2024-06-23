@@ -50,7 +50,7 @@ BILL_JSON_FORMAT = """
             "Remarks": "Remarks"
         }
     ],
-    "ProductDetails": [
+    "BillDetails": [
         {
             "BillId": "Bill ID",
             "ItemName": "Item Name",
@@ -65,21 +65,23 @@ BILL_JSON_FORMAT = """
 
 QUOTATION_JSON_FORMAT = """
 {
-    "Quotation": {
-        "QuotationId": "Quotation ID",
-        "Date": "Issue Date",
-        "Subject": "Subject",
-        "ClientName": "Client Name",
-        "Address": "Client Address",
-        "Tel": "Client Phone Number",
-        "Fax": "Client Fax Number",
-        "Publisher": "Issuer"
-    },
-    "Subtotal": "Price Excluding Tax",
-    "Tax": "Tax Amount",
-    "Total": "Total Amount",
-    "Remarks": "Remarks",
-    "ItemDetails": [
+    "Quotation": [
+        {
+            "QuotationId": "Quotation ID",
+            "Date": "Issue Date",
+            "Subject": "Subject",
+            "ClientName": "Client Name",
+            "Address": "Client Address",
+            "Tel": "Client Phone Number",
+            "Fax": "Client Fax Number",
+            "Publisher": "Issuer"
+            "Subtotal": "Price Excluding Tax",
+            "Tax": "Tax Amount",
+            "Total": "Total Amount",
+            "Remarks": "Remarks"
+        }
+    ],
+    "QuotationDetails": [
         {
             "QuotationId": "Quotation ID",
             "ItemName": "Item Name",
