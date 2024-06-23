@@ -4,3 +4,4 @@ openpyxl
 pandas
 python-dotenv
 azure-ai-documentintelligence
+sqlalchemy
