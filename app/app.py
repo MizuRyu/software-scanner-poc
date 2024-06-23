@@ -28,6 +28,7 @@ st.set_page_config(
 client = AzureOpenAIClient()
 async_client = AsyncAzureOpenAIClient()
 
+MAX_OCR_FILE_SIZE = 4 * 1024 * 1024 # DIのFreeプランは4MBが上限
 
 # sidebar
 with st.sidebar:
@@ -109,6 +110,14 @@ if run_button:
     if not uploaded_files:
         st.warning("File has not been uploaded")
         st.stop()
+    
+    if uploaded_files is not None:
+        if ocr_enhance:
+            for uploaded_file in uploaded_files:
+                if uploaded_file.size > MAX_OCR_FILE_SIZE:
+                    st.warning(f"OCR処理は4MB以下のファイルのみサポートしています。")
+                    st.warning(f"File size is too large: {uploaded_file.name}")
+                    st.stop()
 
     with st.spinner("実行中..."):
         loop = asyncio.new_event_loop()
