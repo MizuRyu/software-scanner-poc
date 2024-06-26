@@ -39,7 +39,7 @@ with st.sidebar:
     uploaded_files = st.file_uploader("ファイルをアップロード", type=["png", "jpg"], accept_multiple_files=True)
     model_temp = st.slider("Temperature", min_value=0.0, max_value=1.0, value=0.3, step=0.1)
     ocr_enhance = st.checkbox("OCR Enhance", value=False)
-    excel_output = st.checkbox("Excel Output", value=False)
+    excel_output = False
     write_db = st.checkbox("Write Data", value=False)
     run_button = st.button("実行")
 
