@@ -14,10 +14,11 @@ class AzureOpenAIClient:
     def __init__(self):
         self.logger = getLogger("software-scanner")
         self.client = AzureOpenAI(
-            api_version=os.getenv("API_VERSION"),
+            api_version="2024-05-01-preview",
             azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
             api_key=os.getenv("AZURE_OPENAI_API_KEY"),
         )
+        self.model=os.getenv("MODEL_NAME", "gpt-4o")
 
         self.system_prompt = SYSTEM_PROMPT_EN
         self.max_tokens = 800
@@ -67,7 +68,7 @@ class AzureOpenAIClient:
 
     def llm_response(self, user_input, base64_image, model_temp=0.3):
         response = self.client.chat.completions.create(
-        model="gpt-4o",
+        model=self.model,
         response_format={ "type": "json_object" },
         messages=[
             {"role": "system", "content": self.system_prompt},
@@ -89,7 +90,7 @@ class AzureOpenAIClient:
         response_message = ""
 
         for chunk in self.client.chat.completions.create(
-        model="gpt-4o",
+        model=self.model,
         response_format={ "type": "json_object" },
         messages=[
             {"role": "system", "content": self.system_prompt},
@@ -118,6 +119,8 @@ class AsyncAzureOpenAIClient:
             azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
             api_key=os.getenv("AZURE_OPENAI_API_KEY"),
         )
+
+        self.model = os.getenv("MODEL_NAME", "gpt-4o")
 
         self.system_prompt = SYSTEM_PROMPT_EN
         self.analyze_system_prompt = ANALYZE_DOCUMENT_SYSTEM_PROMPT_EN
@@ -182,7 +185,7 @@ class AsyncAzureOpenAIClient:
     async def async_llm_response(self, document_type, base64_image, model_temp=0.3):
         system_prompt = self.get_prompt_from_document_type(document_type)
         response_json = await self.client.chat.completions.create(
-        model="gpt-4o",
+        model=self.model,
         response_format={ "type": "json_object" },
         messages=[
             {"role": "system", "content": system_prompt},
@@ -204,7 +207,7 @@ class AsyncAzureOpenAIClient:
         response_message = ""
 
         for chunk in await self.client.chat.completions.create(
-        model="gpt-4o",
+        model=self.model,
         response_format={ "type": "json_object" },
         messages=[
             {"role": "system", "content": self.system_prompt},
@@ -237,7 +240,7 @@ class AsyncAzureOpenAIClient:
         system_prompt = self.get_ocr_prompt_from_document_type(document_type)
 
         response_json = await self.client.chat.completions.create(
-        model="gpt-4o",
+        model=self.model,
         response_format={ "type": "json_object" },
         messages=[
             {"role": "system", "content": "You are AI assistant to help extract information"},
@@ -264,7 +267,7 @@ class AsyncAzureOpenAIClient:
     @measure_time
     async def async_analyze_document_type_llm_response(self, base64_image, model_temp=0.3):
         response_json = await self.client.chat.completions.create(
-        model="gpt-4o",
+        model=self.model,
         response_format={ "type": "text" },
         messages=[
             {"role": "system", "content": self.analyze_system_prompt},
