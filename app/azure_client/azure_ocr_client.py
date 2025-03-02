@@ -51,7 +51,11 @@ class OCRClient:
 
             self.logger.info(f"run_ocr() {type(image_bytes)}")
             image_bytes = self.check_and_resize_image(image_bytes)
-            poller = self.client.begin_analyze_document(model, analyze_request=image_bytes, content_type='application/octet-stream')
+            poller = self.client.begin_analyze_document(
+                model, 
+                body=image_bytes,
+                content_type='application/octet-stream'
+            )
             result = poller.result()
 
             with st.sidebar:
